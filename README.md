@@ -48,3 +48,44 @@ No hay prórroga: suban avances parciales con commits pequeños durante la prueb
 | [`test-manager-library-3145556-page`](https://github.com/code-sena/test-manager-library-3145556-page) | Sitio público estático de presentación |
 | [`test-manager-library-3145556-infra`](https://github.com/code-sena/test-manager-library-3145556-infra) | Contenedores, red, volúmenes y motor de base de datos vacío |
 | [`test-manager-library-3145556-tool`](https://github.com/code-sena/test-manager-library-3145556-tool) | Utilidades: sembrador de datos de demostración |
+
+---
+
+## Running the project
+
+Requirements: Docker with Compose v2.
+
+```bash
+cp .env.example .env   # then set JWT_SECRET and ADMIN_PASSWORD
+docker compose up --build
+```
+
+| Service | URL |
+|---|---|
+| Frontend (`app`) | http://localhost:5173 |
+| API (`api`) | http://localhost:8000/api/v1 |
+| PostgreSQL (`db`) | localhost:55433 (user/password/database `library`) |
+
+The `db` service starts **empty**: no tables and no DDL. The API runs its Laravel migrations on startup
+(ADR-001: the schema is owned only by the application migrations, never by `infra`).
+
+### Verify that the database starts empty
+
+```bash
+docker compose up -d db
+docker compose exec db psql -U library -d library -c "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
+```
+
+The query must return zero rows. Then stop the project with `docker compose down`.
+
+### Decisions
+
+- The compose project name is `manager-library`. Other containers on the same host are not touched.
+- The database is published on host port `55433` to avoid clashing with a local PostgreSQL on `5432`.
+- `.env` is optional for `docker compose config`, but the `api` service needs it for `JWT_SECRET`, `ADMIN_*` and `CORS_ORIGIN`.
+
+## Status
+
+| Task | Status | Evidence |
+|---|---|---|
+| T-20 `docker compose up` brings up an empty database, API and frontend | Partial | `docker compose config` validates; `db` empty-check query is documented above; full `up --build` depends on the `api` and `app` Dockerfiles |
