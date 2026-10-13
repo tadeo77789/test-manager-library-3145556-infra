@@ -4,11 +4,11 @@ name: manager-library
 # migrations (ADR-001). This file must never contain DDL.
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: library
-      POSTGRES_PASSWORD: library
-      POSTGRES_DB: library
+      POSTGRES_USER: ${DB_USERNAME:-library}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_DATABASE:-library}
       TZ: UTC
       PGTZ: UTC
     ports:
@@ -16,7 +16,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U library -d library"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -27,16 +27,18 @@ services:
     build: ../api
     env_file:
       - path: .env
-        required: false
+        required: true
     environment:
       DB_HOST: db
       DB_PORT: "5432"
-      DB_DATABASE: library
-      DB_USERNAME: library
-      DB_PASSWORD: library
+      DB_DATABASE: ${DB_DATABASE:-library}
+      DB_USERNAME: ${DB_USERNAME:-library}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
       TZ: UTC
     ports:
       - "8000:8000"
+    volumes:
+      - covers_data:/var/www/storage/covers
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +56,7 @@ services:
 
 volumes:
   db_data:
+  covers_data:
 
 networks:
   library_net:
