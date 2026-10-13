@@ -1,0 +1,60 @@
+name: manager-library
+
+# Infrastructure only: the database schema is owned by the API's Laravel
+# migrations (ADR-001). This file must never contain DDL.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: library
+      POSTGRES_PASSWORD: library
+      POSTGRES_DB: library
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "55433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U library -d library"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - library_net
+
+  api:
+    build: ../api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: library
+      DB_USERNAME: library
+      DB_PASSWORD: library
+      TZ: UTC
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - library_net
+
+  app:
+    build: ../app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    networks:
+      - library_net
+
+volumes:
+  db_data:
+
+networks:
+  library_net:
+    name: manager-library-net
