@@ -88,4 +88,4 @@ The query must return zero rows. Then stop the project with `docker compose down
 
 | Task | Status | Evidence |
 |---|---|---|
-| T-20 `docker compose up` brings up an empty database, API and frontend | Partial | `docker compose -p manager-library up -d --build db api` on an empty volume (13-oct, ~15:00): migrations ran, admin created, `GET /api/v1/health` → `{"status":"ok"}`, admin login 200 / wrong password 401; restart → "Nothing to migrate". The `app` service was not built in this run. |
+| T-20 `docker compose up` brings up an empty database, API and frontend | Done | Fresh volume (`down -v` for project `manager-library` only), 13-oct ~15:20: `up -d db` -> `information_schema.tables` outside system schemas returned 0 rows. Then `docker compose -p manager-library up -d --build` built and started `db` (healthy), `api`, `app` in ~21 s. API migrations ran and created the admin; `GET http://localhost:8000/api/v1/health` -> 200 `{"status":"ok"}`; `GET http://localhost:5173/` -> 200 with the built `index.html` (`<title>Manager Library</title>`); schema `library` then holds `category, member, loan, loan_item, book, user`. |
