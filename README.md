@@ -88,4 +88,4 @@ The query must return zero rows. Then stop the project with `docker compose down
 
 | Task | Status | Evidence |
 |---|---|---|
-| T-20 `docker compose up` brings up an empty database, API and frontend | Partial | `docker compose config` validates; `db` empty-check query is documented above; full `up --build` depends on the `api` and `app` Dockerfiles |
+| T-20 `docker compose up` brings up an empty database, API and frontend | Partial | `docker compose -p manager-library up -d --build db api` on an empty volume (13-oct, ~15:00): migrations ran, admin created, `GET /api/v1/health` → `{"status":"ok"}`, admin login 200 / wrong password 401; restart → "Nothing to migrate". The `app` service was not built in this run. |
